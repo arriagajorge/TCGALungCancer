@@ -1,0 +1,36 @@
+INFO [2023-02-15 13:23:01] $x
+INFO [2023-02-15 13:23:01] list(A = unique(j[substr(j, 1, 12) %in% subtypes$patient[subtypes$expression_subtype == 
+INFO [2023-02-15 13:23:01]     x]]), B = unique(i[substr(i, 1, 12) %in% subtypes$patient[subtypes$expression_subtype == 
+INFO [2023-02-15 13:23:01]     x]]), C = unique(k[substr(k, 1, 12) %in% subtypes$patient[subtypes$expression_subtype == 
+INFO [2023-02-15 13:23:01]     x]]))
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $col
+INFO [2023-02-15 13:23:01] [1] "transparent"
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $fill
+INFO [2023-02-15 13:23:01] c("cornflowerblue", "green", "red")
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $alpha
+INFO [2023-02-15 13:23:01] [1] 0.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cex
+INFO [2023-02-15 13:23:01] [1] 1.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cat.cex
+INFO [2023-02-15 13:23:01] [1] 1.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $margin
+INFO [2023-02-15 13:23:01] [1] 0.1
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $fontfamily
+INFO [2023-02-15 13:23:01] [1] "sans"
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cat.fontfamily
+INFO [2023-02-15 13:23:01] rep("sans", 3)
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $category.names
+INFO [2023-02-15 13:23:01] c("RNAseq", "HM450", "miRNAseq")
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $filename
+INFO [2023-02-15 13:23:01] x
+INFO [2023-02-15 13:23:01] 

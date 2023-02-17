@@ -1,0 +1,36 @@
+INFO [2023-02-15 13:23:01] $x
+INFO [2023-02-15 13:23:01] list(A = substr(mthyltnLUAD$cases[mthyltnLUAD$sample_type == 
+INFO [2023-02-15 13:23:01]     "Solid Tissue Normal"], 1, 19), B = substr(xprssnLUAD$cases[xprssnLUAD$sample_type == 
+INFO [2023-02-15 13:23:01]     "Solid Tissue Normal"], 1, 19), C = substr(mirnasLUAD$cases[mirnasLUAD$sample_type == 
+INFO [2023-02-15 13:23:01]     "Solid Tissue Normal"], 1, 19))
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $col
+INFO [2023-02-15 13:23:01] [1] "transparent"
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $fill
+INFO [2023-02-15 13:23:01] c("cornflowerblue", "green", "red")
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $alpha
+INFO [2023-02-15 13:23:01] [1] 0.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cex
+INFO [2023-02-15 13:23:01] [1] 1.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cat.cex
+INFO [2023-02-15 13:23:01] [1] 1.5
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $margin
+INFO [2023-02-15 13:23:01] [1] 0.1
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $fontfamily
+INFO [2023-02-15 13:23:01] [1] "sans"
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $cat.fontfamily
+INFO [2023-02-15 13:23:01] rep("sans", 3)
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $category.names
+INFO [2023-02-15 13:23:01] c("RNAseq", "HM450", "miRNAseq")
+INFO [2023-02-15 13:23:01] 
+INFO [2023-02-15 13:23:01] $filename
+INFO [2023-02-15 13:23:01] [1] "Normal"
+INFO [2023-02-15 13:23:01] 
