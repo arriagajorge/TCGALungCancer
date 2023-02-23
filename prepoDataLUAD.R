@@ -31,7 +31,7 @@ expreLUAD = tempLUAD
 stranded_firstLUAD <- expreLUADT@assays@data@listData[["stranded_first"]]
 unstrandedLUAD <- expreLUADT@assays@data@listData[["unstranded"]]
 stranded_secondLUAD <- expreLUADT@assays@data@listData[["stranded_second"]]
-tpm_unstrandLUAD <- tpm_unstrandLUAD <- expreLUADT@assays@data@listData[["tpm_unstrand"]]
+tpm_unstrandLUAD <- expreLUADT@assays@data@listData[["tpm_unstrand"]]
 fpkm_unstrandLUAD <- expreLUADT@assays@data@listData[["fpkm_unstrand"]]
 fpkm_uq_unstrandLUAD <- expreLUADT@assays@data@listData[["fpkm_uq_unstrand"]]
 # "unstranded" "stranded_f" "stranded_s" "tpm_unstra" "fpkm_unstr" "fpkm_uq_un"
@@ -128,35 +128,90 @@ dim(myannot2); dim(myannot3)
 # length(unique(rownames(stranded_firstLUAD)))
 # [1] 60616
 
-fpkm_LUAD <- fpkm_unstrandLUAD[unique(rownames(stranded_firstLUAD)),]
+#fpkm_LUAD <- fpkm_unstrandLUAD[unique(rownames(stranded_firstLUAD)),]
 
 ##################CHECK BIASES########################################################
 library(NOISeq)
 library(edgeR)
-typeof(exprots_hgnc)
-str(exprots_hgnc2)
 
 exprots_hgnc2 <- as.data.frame(exprots_hgnc[unique(rownames(exprots_hgnc)),],)
 exprots_hgnc3 <- sapply(exprots_hgnc2, as.numeric)
 
 #format data for noiseq
+noiseqData_ = readData(data = exprots_hgnc3, factor = designExpLUAD)
 noiseqData = readData(data = exprots_hgnc3,
                       gc = myannot[,1:2],
-                      biotype = myannot[,c(1,3)],factors=designExpLUAD,
+                      biotype = myannot[,c(1,3)],factor=designExpLUAD,
                       length=myannot[,c(1,8)])
+noiseqData2 = readData(data = exprots_hgnc3,
+                      gc = myannot3[,1:2],
+                      biotype = myannot3[,c(1,3)],factor=designExpLUAD,
+                      length=myannot3[,c(1,8)])
+# revisar el gc[1] coicida con algo
+noiseqData_$
 
 #1)check expression bias per subtype
 mycountsbio = dat(noiseqData, type = "countsbio", factor = "subtype")
+# [1] "Warning: 249 features with 0 counts in all samples are to be removed for this analysis."
+# [1] "Counts per million distributions are to be computed for:"
+# [1] "normal"        "prox.-inflam"  "prox.-prolif." "TRU"
+mycountsbio2 = dat(noiseqData2, type = "countsbio", factor = "subtype")
+
+
 #patients with repeated measures
 png("CountsOri.png")
-explo.plot(mycountsbio, plottype = "boxplot",samples = 1:5)
+explo.plot(mycountsbio, plottype = "boxplot")#,samples = 1:5)
 dev.off()
 #2)check for low count genes
 png("lowcountsOri.png")
-explo.plot(mycountsbio, plottype = "barplot", samples = 1:5)
+explo.plot(mycountsbio, plottype = "barplot")#, samples = 1:5)
 dev.off()
 png("lowCountThres.png")
-hist(rowMeans(cpm(exprots_hgnc,log=T)),ylab="genes",
+hist(rowMeans(cpm(exprots_hgnc3,log=T)),ylab="genes",
      xlab="mean of log CPM",col="gray")
 abline(v=0,col="red")
+dev.off()
+
+#3)check for transcript composition bias
+#each sample s is compared to a reference r (which can be arbitrarily chosen).
+#by computing M values=log2(countss = countsr). 
+#Confidence intervals for the M median is computed by bootstrapping.
+#If the median of M values for each comparison is not in the CI, the deviation
+# of the sample is significant, therefore, normalization is needed 
+mycd = dat(noiseqData, type = "cd", norm = FALSE) #slooooow
+#[1] "Warning: 107 features with 0 counts in all samples are to be removed for this analysis."
+table(mycd@dat$DiagnosticTest[,  "Diagnostic Test"])
+#FAILED PASSED 
+#   198     2
+png("MvaluesOri.png")
+explo.plot(mycd,samples=sample(1:ncol(exprots_hgnc3),10))
+dev.off()
+
+#4)check for length & GC bias
+#A cubic spline regression model is fitted. Both the model p-value and the coefficient
+# of determination (R2) are shown. If the model p-value is significant and R2 value is
+# high (more than 70%), the expression depends on the feature
+#noiseqData3 <-  
+addData(data = noiseqData2, gc = myannot3[,c(1,8)])
+
+myGCcontent <- dat(noiseqData, type = "GCbias", factor = "subtype")
+png("GCbiasOri.png",width=1000)
+par(mfrow=c(1,5))
+sapply(1:5,function(x) explo.plot(myGCcontent, samples = x))
+dev.off()
+#The GC-content of each gene does not change from sample to sample, so it can be expected to
+#have little effect on differential expression analyses to a first approximation
+mylenBias <- dat(noiseqData, k = 0, type = "lengthbias",
+                 factor = "subtype")
+png("lengthbiasOri.png",width=1000)
+par(mfrow=c(1,5))
+sapply(1:5,function(x) explo.plot(mylenBias, samples = x))
+dev.off()
+#BUT, since the gene has the same length in all your samples, there is no need to divide by the gene length
+
+#5) check for batch effect
+myPCA = dat(noiseqData, type = "PCA", norm = F, logtransf = F)
+png("PCA_Ori.png")
+explo.plot(myPCA, samples = c(1,2), plottype = "scores",
+           factor = "subtype")
 dev.off()
