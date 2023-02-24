@@ -282,25 +282,54 @@ explo.plot(myPCA, samples = c(1,2), plottype = "scores",
 dev.off()
 
 #############################FINAL QUALITY CHECK#######################################################
-noiseqData_pr <- readData(data = exprs(ffTMMARSyn), gc = myannot[,1:2],
+noiseqData <- NOISeq::readData(data = exprs(ffTMMARSyn), gc = myannot[,1:2],
                       biotype = myannot[,c(1,3)],factor=designExpLUAD,
                       length=myannot[,c(1,8)])
-
-mycountsbio = dat(noiseqData, type = "countsbio", factor = "subtype",
+mycountsbio = NOISeq::dat(noiseqData, type = "countsbio", factor = "subtype",
                   norm=T)
 png("CountsFinal.png")
-explo.plot(mycountsbio, plottype = "boxplot",samples=1:5)
+explo.plot(mycountsbio, plottype = "boxplot",samples=1:4)
 dev.off()
 myGCcontent <- dat(noiseqData, k = 0, type = "GCbias", 
                    factor = "subtype",norm=T)
 png("GCbiasFinal.png",width=1000)
-par(mfrow=c(1,5))
-sapply(1:5,function(x) explo.plot(myGCcontent, samples = x))
+par(mfrow=c(1,4))
+sapply(1:4,function(x) explo.plot(myGCcontent, samples = x))
 dev.off()
 mylenBias <- dat(noiseqData, k = 0, type = "lengthbias", 
                  factor = "subtype",norm=T)
 png("lengthbiasFinal.png",width=1000)
-par(mfrow=c(1,5))
-sapply(1:5,function(x) explo.plot(mylenBias, samples = x))
+par(mfrow=c(1,4))
+sapply(1:4,function(x) explo.plot(mylenBias, samples = x))
 dev.off()
 
+#############################RESOLVE DUPLICATES & SAVE##################################################
+#get duplicates
+i=designExpLUAD$samples[duplicated(designExpLUAD$samples)]
+#get sample barcode per sample
+i=lapply(i,function(x) designExpLUAD$barcode[designExpLUAD$samples==x])
+#separate duplicates
+final=exprs(ffTMMARSyn)
+duplis=final[,colnames(final)%in%unlist(i)]
+prefi=final[,!colnames(final)%in%unlist(i)]
+#average duplicates
+temp=do.call(cbind,lapply(i,function(x) 
+  rowMeans(duplis[,colnames(duplis)%in%x])))
+#identify samples with barcode 
+colnames(temp)=designExpLUAD$samples[duplicated(designExpLUAD$samples)]
+colnames(prefi)=substr(colnames(prefi),1,19)
+#joint matrices
+final=cbind(prefi,temp)
+dim(final)
+#[1] 10944  193
+final=final[,order(match(colnames(final),subtypeLUAD$samples))]
+write.table(final,"RNAseqnormalized.tsv",sep='\t',quote=F)
+#duplicates share everything except the plate
+# TCGA-A7-A13D-01A-13R-A12P-07
+# TCGA-A7-A13D-01A-13R-A277-07
+# TCGA-A7-A26E-01A-11R-A277-07
+# TCGA-A7-A26E-01A-11R-A169-07
+# TCGA-A7-A26J-01A-11R-A169-07
+# TCGA-A7-A26J-01A-11R-A277-07
+# TCGA-A7-A13E-01A-11R-A12P-07
+# TCGA-A7-A13E-01A-11R-A277-07
