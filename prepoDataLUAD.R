@@ -118,6 +118,17 @@ dim(myannot2); dim(myannot)
 # [1] "HGNC:30046" "HGNC:11582" "HGNC:33853" "HGNC:4876" 
 which(myannot2$hgnc_id == "HGNC:30046"); which(myannot2$hgnc_id == "HGNC:11582")
 which(myannot2$hgnc_id == "HGNC:33853"); which(myannot2$hgnc_id == "HGNC:4876")
+#################################################################REVISAR REVISAR
+# > which(!myannot$ensembl_gene_id%in%myannot3$ensembl_gene_id)
+# [1] 10767
+# > myannot[10767]
+# Error in `[.data.frame`(myannot, 10767) : undefined columns selected
+# > myannot[10767,]
+# ensembl_gene_id percentage_gene_gc_content   gene_biotype start_position end_position
+# 41617 ENSG00000254093                      43.17 protein_coding       10764961     10839884
+# hgnc_id hgnc_symbol length
+# 41617 HGNC:30046       PINX1  74923
+
 
 myannot2[c(18566,18728),]; myannot2[c(19327,19336),]
 myannot2[c(12080,19340),]; myannot2[c(7581,19375),]
@@ -136,9 +147,9 @@ library(edgeR)
 
 exprots_hgnc2 <- as.data.frame(exprots_hgnc[unique(rownames(exprots_hgnc)),],)
 exprots_hgnc3 <- sapply(exprots_hgnc2, as.numeric)
+rownames(exprots_hgnc3) <- rownames(exprots_hgnc[unique(rownames(exprots_hgnc)),])
 
 #format data for noiseq
-noiseqData_ = readData(data = exprots_hgnc3, factor = designExpLUAD)
 noiseqData = readData(data = exprots_hgnc3,
                       gc = myannot[,1:2],
                       biotype = myannot[,c(1,3)],factor=designExpLUAD,
@@ -160,11 +171,11 @@ mycountsbio2 = dat(noiseqData2, type = "countsbio", factor = "subtype")
 
 #patients with repeated measures
 png("CountsOri.png")
-explo.plot(mycountsbio, plottype = "boxplot")#,samples = 1:5)
+explo.plot(mycountsbio2, plottype = "boxplot",samples = 1:4)
 dev.off()
 #2)check for low count genes
 png("lowcountsOri.png")
-explo.plot(mycountsbio, plottype = "barplot")#, samples = 1:5)
+explo.plot(mycountsbio2, plottype = "barplot", samples = 1:4)
 dev.off()
 png("lowCountThres.png")
 hist(rowMeans(cpm(exprots_hgnc3,log=T)),ylab="genes",
@@ -182,7 +193,7 @@ mycd = dat(noiseqData, type = "cd", norm = FALSE) #slooooow
 #[1] "Warning: 107 features with 0 counts in all samples are to be removed for this analysis."
 table(mycd@dat$DiagnosticTest[,  "Diagnostic Test"])
 #FAILED PASSED 
-#   198     2
+#   199     1
 png("MvaluesOri.png")
 explo.plot(mycd,samples=sample(1:ncol(exprots_hgnc3),10))
 dev.off()
@@ -192,26 +203,104 @@ dev.off()
 # of determination (R2) are shown. If the model p-value is significant and R2 value is
 # high (more than 70%), the expression depends on the feature
 #noiseqData3 <-  
-addData(data = noiseqData2, gc = myannot3[,c(1,8)])
+#addData(data = noiseqData, gc = myannot3[,c(1,8)])
 
-myGCcontent <- dat(noiseqData, type = "GCbias", factor = "subtype")
+myGCcontent <- dat(noiseqData2, type = "GCbias", factor = "subtype")
 png("GCbiasOri.png",width=1000)
-par(mfrow=c(1,5))
-sapply(1:5,function(x) explo.plot(myGCcontent, samples = x))
+par(mfrow=c(1,4))
+sapply(1:4, function(x) explo.plot(myGCcontent, samples = x))
 dev.off()
 #The GC-content of each gene does not change from sample to sample, so it can be expected to
 #have little effect on differential expression analyses to a first approximation
-mylenBias <- dat(noiseqData, k = 0, type = "lengthbias",
+mylenBias <- dat(noiseqData2, k = 0, type = "lengthbias",
                  factor = "subtype")
 png("lengthbiasOri.png",width=1000)
-par(mfrow=c(1,5))
-sapply(1:5,function(x) explo.plot(mylenBias, samples = x))
+par(mfrow=c(1,4))
+sapply(1:4,function(x) explo.plot(mylenBias, samples = x))
 dev.off()
 #BUT, since the gene has the same length in all your samples, there is no need to divide by the gene length
 
 #5) check for batch effect
-myPCA = dat(noiseqData, type = "PCA", norm = F, logtransf = F)
+myPCA = dat(noiseqData2, type = "PCA", norm = F, logtransf = F)
 png("PCA_Ori.png")
 explo.plot(myPCA, samples = c(1,2), plottype = "scores",
            factor = "subtype")
 dev.off()
+
+#################SOLVE BIASES######################################################
+library(EDASeq)
+
+#1) filter low count genes.
+#CPM=(counts/fragments sequenced)*one million.
+#Filtering those genes with average CPM below 1, would be different
+#to filtering by those with average counts below 1. 
+countMatrixFiltered = filtered.data(exprots_hgnc3, factor = "subtype",
+                                    norm = FALSE, depth = NULL, method = 1, cpm = 0, p.adj = "fdr")
+#10943 features are to be kept for differential expression analysis with filtering method 1
+myannot3=myannot3[myannot3$ensembl_gene_id%in%rownames(countMatrixFiltered),]
+myannot=myannot[myannot$ensembl_gene_id%in%rownames(countMatrixFiltered),]
+
+
+#all names must match
+mydataEDA <- newSeqExpressionSet(
+  counts=as.matrix(countMatrixFiltered),
+  featureData=data.frame(myannot3,row.names=myannot3$ensembl_gene_id),
+  phenoData=data.frame(designExpLUAD,row.names=designExpLUAD$barcode))
+
+mydataEDA2 <- newSeqExpressionSet(
+  counts=as.matrix(countMatrixFiltered),
+  featureData=data.frame(myannot,row.names=myannot$ensembl_gene_id),
+  phenoData=data.frame(designExpLUAD,row.names=designExpLUAD$barcode))
+#order for less bias
+gcFull <- withinLaneNormalization(mydataEDA2, 
+                                  "percentage_gene_gc_content", which = "full")#corrects GC bias 
+lFull <- withinLaneNormalization(gcFull, "length", which = "full")#corrects length bias 
+fullfullTMM <-NOISeq::tmm(normCounts(lFull), long = 1000, lc = 0, k = 0)
+#norm.counts <- betweenLaneNormalization(normCounts(lFull),
+# which = "median", offset = FALSE)
+#FAILED PASSED 
+#   290    518
+noiseqData = NOISeq::readData(data = fullfullTMM, factors=designExpLUAD)
+#cd has to preceed ARSyN or won't work
+mycd=NOISeq::dat(noiseqData,type="cd",norm=TRUE)
+table(mycd@dat$DiagnosticTest[,  "Diagnostic Test"])
+#FAILED PASSED 
+#   165     35
+
+#############################SOLVE BATCH EFFECT#######################################################
+myPCA = dat(noiseqData, type = "PCA", norm = T, logtransf = F)
+png("preArsyn.png")
+explo.plot(myPCA, samples = c(1,2), plottype = "scores",
+           factor = "subtype")
+dev.off()
+ffTMMARSyn=ARSyNseq(noiseqData, factor = "subtype", batch = F,
+                    norm = "n",  logtransf = T)
+myPCA = dat(ffTMMARSyn, type = "PCA", norm = T,logtransf = T)
+png("postArsyn.png")
+explo.plot(myPCA, samples = c(1,2), plottype = "scores", 
+           factor = "subtype")
+dev.off()
+
+#############################FINAL QUALITY CHECK#######################################################
+noiseqData_pr <- readData(data = exprs(ffTMMARSyn), gc = myannot[,1:2],
+                      biotype = myannot[,c(1,3)],factor=designExpLUAD,
+                      length=myannot[,c(1,8)])
+
+mycountsbio = dat(noiseqData, type = "countsbio", factor = "subtype",
+                  norm=T)
+png("CountsFinal.png")
+explo.plot(mycountsbio, plottype = "boxplot",samples=1:5)
+dev.off()
+myGCcontent <- dat(noiseqData, k = 0, type = "GCbias", 
+                   factor = "subtype",norm=T)
+png("GCbiasFinal.png",width=1000)
+par(mfrow=c(1,5))
+sapply(1:5,function(x) explo.plot(myGCcontent, samples = x))
+dev.off()
+mylenBias <- dat(noiseqData, k = 0, type = "lengthbias", 
+                 factor = "subtype",norm=T)
+png("lengthbiasFinal.png",width=1000)
+par(mfrow=c(1,5))
+sapply(1:5,function(x) explo.plot(mylenBias, samples = x))
+dev.off()
+
