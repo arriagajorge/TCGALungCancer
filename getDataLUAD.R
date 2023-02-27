@@ -2,7 +2,7 @@
 # @date 02/2023
 # @author jvasquez
 
-
+setwd("/home/jvasquez/Documents/TCGA-lung")
 library(SummarizedExperiment)
 library(TCGAbiolinks)
 library(VennDiagram)
